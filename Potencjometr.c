@@ -36,82 +36,32 @@ void init(void){
 
 int main(void) {
     init();
-    
-    char current6 = 0, prev6 = 0;
-    char current13 = 0, prev13 = 0;
-
-    int value = 1; // tryb dzialania
-    
-    unsigned char portValue = 0b00000001;
-    //unsigned int bit;
-    
-    unsigned char bit = 1;
-    unsigned char mask = 0;
-    unsigned char i = 2;
-    unsigned char n = 2;
-    
     unsigned long adc_value;
+    unsigned char tryb = 0;
+    unsigned char poprzedni_stan_przycisku = 1;
     unsigned long opoznienie;
     
-    while (1) {
+    while(1){
         adc_value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
         if (adc_value == 0xFFFF){
             continue;
         }
         opoznienie = 40000 + (adc_value * 4000);
         
-        switch (value) {
-            case 1: // 8 bitowy licznik binarny zliczajacy w gore (0 255)
-                LATA = portValue++;
-                if (portValue > 255) portValue = 0;
-                break;
-
-            case 2: // Kolejka
-                LATA = mask | bit;
-                if (mask == 254) { // Reset gdy wszystkie diody s? zapalone
-                    bit = 1;
-                    mask = 0;
-                    n = 2;
-                    i = 2;
-                } else if (bit < mask || mask == 0) {
-                    bit <<= 1;
-                }
-
-                if ((bit * i) == mask) {
-                    mask += bit;
-                    bit = 1;
-                    i = i + (1 << (n));  // i = i + 2^n (np. 2 -> 6 -> 14 -> 30...)
-                    n++;  // Zwi?kszamy n dla obliczania kolejnej pot?gi liczby 2
-                }
-
-                if (bit == 128) {
-                    mask = bit;
-                    bit = 1;
-                    n = 2;  // Resetowanie n do 2, aby kontynuowa? dodawanie 2^n
-                }
-                break;
+        unsigned char stan_przycisku = PORTDbits.RD6;
+        
+        if (poprzedni_stan_przycisku == 1 && stan_przycisku == 0){
+            tryb ^= 1;
+            __delay32(40000);
         }
-
-        // Przycisk RD6
-        prev6 = current6;
-        current6 = PORTDbits.RD6;
-        if (prev6 == 1 && current6 == 0) {
-            value++;
-            if (value > 9) value = 1;
-            portValue = 0b00000001;
+        poprzedni_stan_przycisku = stan_przycisku;
+        
+        if (tryb == 0){
+            LATA = 0x0001;
+            __delay32(opoznienie);
+            LATA = 0x0000;
+            __delay32(opoznienie);
         }
-
-        // Przycisk RD13
-        prev13 = current13;
-        current13 = PORTDbits.RD13;
-        if (prev13 == 1 && current13 == 0) {
-            value--;
-            if (value < 1) value = 9;
-            portValue = 0b00000001;
-        }
-
-        __delay32(opoznienie);
     }
-
     return 0;
 }
