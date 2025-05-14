@@ -79,9 +79,11 @@ int main(void) {
 
                 if ((bit * i) == mask) {
                     mask += bit;
-                    bit = 1;
+                    bit = 0;
                     i = i + (1 << (n));  // i = i + 2^n (np. 2 -> 6 -> 14 -> 30...)
                     n++;  // Zwi?kszamy n dla obliczania kolejnej pot?gi liczby 2
+                } else if (bit == 0){
+                    bit += 1;
                 }
 
                 if (bit == 128) {
@@ -97,7 +99,7 @@ int main(void) {
         current6 = PORTDbits.RD6;
         if (prev6 == 1 && current6 == 0) {
             value++;
-            if (value > 9) value = 1;
+            if (value > 2) value = 1;
             portValue = 0b00000001;
         }
 
@@ -106,7 +108,7 @@ int main(void) {
         current13 = PORTDbits.RD13;
         if (prev13 == 1 && current13 == 0) {
             value--;
-            if (value < 1) value = 9;
+            if (value < 1) value = 2;
             portValue = 0b00000001;
         }
 

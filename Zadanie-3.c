@@ -30,8 +30,8 @@ void init(void) {
     ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
     ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
 
-    TRISA = 0x0000;        // PORTA jako wyjścia (LEDy)
-    TRISB |= (1 << 3);     // RB3 jako wejście (przycisk)
+    TRISA = 0x0000;        // PORTA jako wyj?cia (LEDy)
+    TRISB |= (1 << 3);     // RB3 jako wej?cie (przycisk)
 }
 
 int main(void) {
@@ -49,7 +49,7 @@ int main(void) {
 
         unsigned char przyciskRB3 = PORTBbits.RB3;
 
-        // Ręczne wyłączenie alarmu
+        // R?czne wy??czenie alarmu
         if (alarm && przyciskRB3_poprzedni == 1 && przyciskRB3 == 0) {
             alarm = 0;
             mruganie = 0;
@@ -67,14 +67,14 @@ int main(void) {
 
         if (alarm) {
             if (adc < PRZEKROCZENIE_ADC) {
-                // Automatyczne wyłączenie
+                // Automatyczne wy??czenie
                 alarm = 0;
                 mruganie = 0;
                 licznik_mrugania = 0;
                 LATA = 0x00;
             } else {
                 if (mruganie) {
-                    LATA = (licznik_mrugania % 2) ? 0x01 : 0x00; // Mrugaj pierwszą diodą
+                    LATA = (licznik_mrugania % 2) ? 0x01 : 0x00; // Mrugaj pierwsz? diod?
                     licznik_mrugania++;
                     if (licznik_mrugania >= CZAS_MRUGANIA) {
                         mruganie = 0;

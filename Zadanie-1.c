@@ -38,7 +38,6 @@ int main(void) {
     unsigned char portValueSnake = 0b00000111;
     unsigned char lfsr = 0b1110011;
     int goingRight = 1;
-    //unsigned int bit;
     
     unsigned char bit = 1;
     unsigned char mask = 0;
@@ -94,7 +93,7 @@ int main(void) {
                 
             case 8: // Kolejka
                 LATA = mask | bit;
-                if (mask == 254) { // Reset gdy wszystkie diody są zapalone
+                if (mask == 254) { // Reset gdy wszystkie diody s? zapalone
                     bit = 1;
                     mask = 0;
                     n = 2;
@@ -105,15 +104,17 @@ int main(void) {
 
                 if ((bit * i) == mask) {
                     mask += bit;
-                    bit = 1;
+                    bit = 0;
                     i = i + (1 << (n));  // i = i + 2^n (np. 2 -> 6 -> 14 -> 30...)
-                    n++;  // Zwiększamy n dla obliczania kolejnej potęgi liczby 2
+                    n++;  // Zwi?kszamy n dla obliczania kolejnej pot?gi liczby 2
+                } else if (bit == 0){
+                    bit += 1;
                 }
 
                 if (bit == 128) {
                     mask = bit;
                     bit = 1;
-                    n = 2;  // Resetowanie n do 2, aby kontynuować dodawanie 2^n
+                    n = 2;  // Resetowanie n do 2, aby kontynuowa? dodawanie 2^n
                 }
                 break;
 
@@ -144,7 +145,7 @@ int main(void) {
             lfsr = 0b1110011;
         }
 
-        __delay32(1500000);
+        __delay32(1000000);
     }
 
     return 0;
