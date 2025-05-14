@@ -22,6 +22,7 @@
 #include <xc.h>
 #include "libpic30.h"
 #include "adc.h"
+#include "buttons.h"
 
 #define PRZEKROCZENIE_ADC 512
 #define CZAS_MRUGANIA 10 // 10 * 500ms = 5s
@@ -31,65 +32,56 @@ void init(void) {
     ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
 
     TRISA = 0x0000;
-    TRISB |= (1 << 3);
+    TRISD |= (1 << 6);
 }
 
 int main(void) {
     init();
 
-    unsigned int adc;
+    unsigned int adc_value;
     char alarm = 0;
     char mruganie = 0;
     char licznik_mrugania = 0;
-    char przyciskRD6_poprzedni = 1;
+    char poprzedni_stan_przycisku = 1;
 
     while (1) {
-        adc = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
-        if (adc == 0xFFFF) continue;
-
-        unsigned char przyciskRD6 = PORTDbits.RD6;
-
-        if (alarm && przyciskRD6_poprzedni == 1 && przyciskRD6 == 0) {
+        adc_value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+        if (adc_value == 0xFFFF) {
+            continue;
+        }
+        
+        unsigned char stan_przycisku = PORTDbits.RD6;
+        
+        // Jesli alarm jest wlaczony i przycisk jest wcisniety to resetuje sie alarm i czysci diody
+        if (alarm && poprzedni_stan_przycisku == 1 && stan_przycisku == 0 && adc_value < PRZEKROCZENIE_ADC) {
             alarm = 0;
             mruganie = 0;
             licznik_mrugania = 0;
             LATA = 0x00;
         }
-        przyciskRD6_poprzedni = przyciskRD6;
 
-        if (!alarm && adc >= PRZEKROCZENIE_ADC) {
-            // Start alarmu
+        // Jesli nie ma alarmu i potencjometr przekroczy polowe zakresu alarm sie zalacza
+        if (!alarm && adc_value >= PRZEKROCZENIE_ADC) {
             alarm = 1;
             mruganie = 1;
             licznik_mrugania = 0;
         }
 
         if (alarm) {
-            if (adc < PRZEKROCZENIE_ADC && przyciskRD6_poprzedni == 1 && przyciskRD6 == 0) {
-                alarm = 0;
-                mruganie = 0;
-                licznik_mrugania = 0;
-                LATA = 0x00;
-            } else {
-                if (mruganie) {
-                    LATA = (licznik_mrugania % 2) ? 0x01 : 0x00;
-                    licznik_mrugania++;
-                    if (licznik_mrugania >= CZAS_MRUGANIA) {
-                        mruganie = 0;
-                        LATA = 0xFF;
-                    }
-                } else {
+            if (mruganie) {
+                LATA = (licznik_mrugania % 2) ? 0x01 : 0x00;
+                licznik_mrugania++;
+                if (licznik_mrugania >= CZAS_MRUGANIA) {
+                    mruganie = 0;
                     LATA = 0xFF;
                 }
-            }
-        } else {
-            if (adc >= PRZEKROCZENIE_ADC) {
-                alarm = 1;
-                mruganie = 1;
-                licznik_mrugania = 0;
+            } else {
+                LATA = 0xFF;
             }
         }
-        przyciskRD6_poprzedni = przyciskRD6;
+        
+        poprzedni_stan_przycisku = stan_przycisku;
+        
         __delay32(2000000);
     }
 
