@@ -30,8 +30,8 @@ void init(void) {
     ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
     ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
 
-    TRISA = 0x0000;        // PORTA jako wyj?cia (LEDy)
-    TRISB |= (1 << 3);     // RB3 jako wej?cie (przycisk)
+    TRISA = 0x0000;
+    TRISB |= (1 << 3);
 }
 
 int main(void) {
@@ -41,22 +41,21 @@ int main(void) {
     char alarm = 0;
     char mruganie = 0;
     char licznik_mrugania = 0;
-    char przyciskRB3_poprzedni = 1;
+    char przyciskRD6_poprzedni = 1;
 
     while (1) {
         adc = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
         if (adc == 0xFFFF) continue;
 
-        unsigned char przyciskRB3 = PORTBbits.RB3;
+        unsigned char przyciskRD6 = PORTDbits.RD6;
 
-        // R?czne wy??czenie alarmu
-        if (alarm && przyciskRB3_poprzedni == 1 && przyciskRB3 == 0) {
+        if (alarm && przyciskRD6_poprzedni == 1 && przyciskRD6 == 0) {
             alarm = 0;
             mruganie = 0;
             licznik_mrugania = 0;
             LATA = 0x00;
         }
-        przyciskRB3_poprzedni = przyciskRB3;
+        przyciskRD6_poprzedni = przyciskRD6;
 
         if (!alarm && adc >= PRZEKROCZENIE_ADC) {
             // Start alarmu
@@ -66,27 +65,32 @@ int main(void) {
         }
 
         if (alarm) {
-            if (adc < PRZEKROCZENIE_ADC) {
-                // Automatyczne wy??czenie
+            if (adc < PRZEKROCZENIE_ADC && przyciskRD6_poprzedni == 1 && przyciskRD6 == 0) {
                 alarm = 0;
                 mruganie = 0;
                 licznik_mrugania = 0;
                 LATA = 0x00;
             } else {
                 if (mruganie) {
-                    LATA = (licznik_mrugania % 2) ? 0x01 : 0x00; // Mrugaj pierwsz? diod?
+                    LATA = (licznik_mrugania % 2) ? 0x01 : 0x00;
                     licznik_mrugania++;
                     if (licznik_mrugania >= CZAS_MRUGANIA) {
                         mruganie = 0;
-                        LATA = 0xFF; // Wszystkie diody zapalone
+                        LATA = 0xFF;
                     }
                 } else {
                     LATA = 0xFF;
                 }
             }
+        } else {
+            if (adc >= PRZEKROCZENIE_ADC) {
+                alarm = 1;
+                mruganie = 1;
+                licznik_mrugania = 0;
+            }
         }
-
-        __delay32(2000000); // ~500ms przy 8MHz Fcy
+        przyciskRD6_poprzedni = przyciskRD6;
+        __delay32(2000000);
     }
 
     return 0;
