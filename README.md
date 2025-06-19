@@ -1,1 +1,5 @@
-Krzysztof Magnuszewski 169457
+# Systemy Wbudowane
+
+by ezehe
+
+2025
